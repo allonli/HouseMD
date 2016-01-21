@@ -17,71 +17,72 @@
 package com.github.zhongl.housemd.command
 
 import java.lang.reflect.Field
-import java.util.List
+import java.util
+
 import com.github.zhongl.housemd.misc.ReflectionUtils._
 
 /**
- * @author <a href="mailto:zhong.lunfu@gmail.com">zhongl<a>
- */
+  * @author <a href="mailto:zhong.lunfu@gmail.com">zhongl<a>
+  */
 
 trait ClassMemberCompleter extends ClassSimpleNameCompleter {
 
-  override protected def completeClassSimpleName(buffer: String, cursor: Int, candidates: List[CharSequence]) =
+  override protected def completeClassSimpleName(buffer: String, cursor: Int, candidates: util.List[CharSequence]) =
     buffer.split("\\.") match {
       case Array(classSimpleName) if buffer.endsWith(".") => completeAll(classSimpleName, cursor, candidates)
-      case Array(prefix)                                  => super.completeClassSimpleName(buffer, cursor, candidates)
-      case Array(classSimpleName, prefix)                 => complete(classSimpleName, prefix, cursor, candidates)
-      case _                                              => -1
+      case Array(prefix) => super.completeClassSimpleName(buffer, cursor, candidates)
+      case Array(classSimpleName, prefix) => complete(classSimpleName, prefix, cursor, candidates)
+      case _ => -1
     }
 
   override protected def collectLoadedClassNames(prefix: String) = inst.getAllLoadedClasses collect {
     case c@ClassSimpleName(n) if n.startsWith(prefix) && isNotConcrete(c) => n + "+"
-    case ClassSimpleName(n) if n.startsWith(prefix)                       => n
+    case ClassSimpleName(n) if n.startsWith(prefix) => n
   }
 
-  protected def completeAll(buffer: String, cursor: Int, candidates: List[CharSequence]): Int
+  protected def completeAll(buffer: String, cursor: Int, candidates: util.List[CharSequence]): Int
 
-  protected def complete(simpleName: String, member: String, cursor: Int, candidates: List[CharSequence]): Int
+  protected def complete(simpleName: String, member: String, cursor: Int, candidates: util.List[CharSequence]): Int
 
 }
 
 trait MethodFilterCompleter extends ClassMemberCompleter {
 
-  private def allDeclaredMethodsOf(classSimpleName: String)(collect: Array[String] => Array[String]) =
-    inst.getAllLoadedClasses collect {
-      case c@ClassSimpleName(n) if (n == classSimpleName || n + "+" == classSimpleName) => collect(constructorAndMethodNamesOf(c))
-    }
-
-  override protected def completeAll(classSimpleName: String, cursor: Int, candidates: List[CharSequence]) =
+  override protected def completeAll(classSimpleName: String, cursor: Int, candidates: util.List[CharSequence]) =
     allDeclaredMethodsOf(classSimpleName) { a => a } match {
       case Array() => -1
-      case all     => all.flatten.sorted foreach { candidates.add }; cursor
+      case all => all.flatten.sorted foreach {candidates.add}; cursor
     }
 
-  override protected def complete(simpleName: String, prefix: String, cursor: Int, candidates: List[CharSequence]) =
-    allDeclaredMethodsOf(simpleName) { _ collect { case m if m.startsWith(prefix) => m } } match {
+  override protected def complete(simpleName: String, prefix: String, cursor: Int, candidates: util.List[CharSequence]) =
+    allDeclaredMethodsOf(simpleName) {_ collect { case m if m.startsWith(prefix) => m }} match {
       case Array() => -1
-      case all     => all.flatten.sorted foreach { candidates.add }; cursor - prefix.length
+      case all => all.flatten.sorted foreach {candidates.add}; cursor - prefix.length
+    }
+
+  private def allDeclaredMethodsOf(classSimpleName: String)(collect: Array[String] => Array[String]) =
+    inst.getAllLoadedClasses collect {
+      case c@ClassSimpleName(n) if n == classSimpleName || n + "+" == classSimpleName => collect(constructorAndMethodNamesOf(c))
     }
 }
 
 // FIXME: reduce duplication in MemberFilterCompleter
 trait FieldFilterCompleter extends ClassMemberCompleter {
 
+  override protected def completeAll(classSimpleName: String, cursor: Int, candidates: util.List[CharSequence]) =
+    allDeclaredFieldsOf(classSimpleName) {_ map {_.getName}} match {
+      case Array() => -1
+      case all => all.flatten.sorted foreach {candidates.add}; cursor
+    }
+
   private def allDeclaredFieldsOf(classSimpleName: String)(collect: Array[Field] => Array[String]) =
     inst.getAllLoadedClasses collect {
-      case c@ClassSimpleName(n) if (n == classSimpleName || n + "+" == classSimpleName) => collect(c.getDeclaredFields)
+      case c@ClassSimpleName(n) if n == classSimpleName || n + "+" == classSimpleName => collect(c.getDeclaredFields)
     }
 
-  override protected def completeAll(classSimpleName: String, cursor: Int, candidates: List[CharSequence]) =
-    allDeclaredFieldsOf(classSimpleName) { _ map { _.getName } } match {
+  override protected def complete(simpleName: String, prefix: String, cursor: Int, candidates: util.List[CharSequence]) =
+    allDeclaredFieldsOf(simpleName) {_ collect { case f if f.getName.startsWith(prefix) => f.getName }} match {
       case Array() => -1
-      case all     => all.flatten.sorted foreach { candidates.add }; cursor
-    }
-
-  override protected def complete(simpleName: String, prefix: String, cursor: Int, candidates: List[CharSequence]) =
-    allDeclaredFieldsOf(simpleName) { _ collect { case f if f.getName.startsWith(prefix) => f.getName } } match {
-      case Array() => -1
-      case all     => all.flatten.sorted foreach { candidates.add }; cursor - prefix.length
+      case all => all.flatten.sorted foreach {candidates.add}; cursor - prefix.length
     }
 }

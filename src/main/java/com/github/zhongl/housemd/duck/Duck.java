@@ -48,7 +48,7 @@ public class Duck {
             }
         };
 
-        Class<?>[] commandClasses = loadClasses(parts[3].split("\\s+"), classLoader);
+        Class<?>[] commandClasses = loadClasses("\\s+".split(parts[3]), classLoader);
 
         Runnable executor = (Runnable) classLoader.loadClass(telephoneClassName)
                 .getConstructor(Instrumentation.class, int.class, Class[].class)

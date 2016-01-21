@@ -106,7 +106,7 @@ class Transform extends ((Instrumentation, Filter, Seconds, Int, Loggable, Hook)
         try {
           if (classes.contains(klass)) ClassDecorator.decorate(bytecode, name, filter.curried(klass)) else null
         } catch {
-          case e => log.error(e); null
+          case e: Throwable => log.error(e); null
         }
       }
     }
@@ -121,7 +121,7 @@ class Transform extends ((Instrumentation, Filter, Seconds, Int, Loggable, Hook)
           inst.retransformClasses(c)
           log.info("Probe " + c)
         } catch {
-          case e => log.warn("Failed to probe " + c + " because of " + e)
+          case e: Throwable => log.warn("Failed to probe " + c + " because of " + e)
         }
     }
   }
@@ -135,7 +135,7 @@ class Transform extends ((Instrumentation, Filter, Seconds, Int, Loggable, Hook)
           inst.retransformClasses(c)
           log.info("Reset " + c)
         } catch {
-          case e => log.warn("Failed to reset " + c + " because of " + e)
+          case e: Throwable => log.warn("Failed to reset " + c + " because of " + e)
         }
     }
   }

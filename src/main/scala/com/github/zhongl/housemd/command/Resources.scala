@@ -13,13 +13,13 @@ class Resources(inst: Instrumentation, out: PrintOut)
   private val fullname = parameter[String]("full-name", "resource full name, eg: com/example/xxx.xxx .")
 
   private object Loader {
-    def unapply(c: Class[_]) = if (c.getClassLoader == null) None else Some(c.getClassLoader)
+    def unapply(c: Class[_]) = Option(c.getClassLoader)
   }
 
   def run() {
     val name = fullname()
     val loaders = inst.getAllLoadedClasses.collect { case Loader(cl) => cl }.distinct
-    val urls = loaders.map {_.getResources(name).toList}.flatten
+    val urls = loaders.flatMap(_.getResources(name).toList)
     urls.distinct.foreach {println}
   }
 }

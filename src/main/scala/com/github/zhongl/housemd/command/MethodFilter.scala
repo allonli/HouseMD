@@ -45,7 +45,7 @@ class MethodFilter(classSimpleName: String, methodName: String = "*") {
       val realname = classSimpleName.dropRight(1)
       (simpleNameOf(className) == realname ||
        superClassName != null && simpleNameOf(superClassName) == realname) ||
-      interfaceNames.find(simpleNameOf(_) == realname).isDefined
+      interfaceNames.exists(simpleNameOf(_) == realname)
     } else {
       simpleNameOf(className) == classSimpleName
     }

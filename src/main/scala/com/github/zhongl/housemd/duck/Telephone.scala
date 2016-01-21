@@ -49,10 +49,13 @@ class Telephone(inst: Instrumentation, port: Int, classes: Array[Class[Command]]
 
         override def error(a: Any) {
           super.error(a)
-          if (a.isInstanceOf[Throwable]) lastCommand.keep(a.asInstanceOf[Throwable])
+          a match {
+            case throwable: Throwable => lastCommand.keep(throwable)
+            case _ =>
+          }
         }
 
-      } main (Array.empty[String])
+      } main Array.empty[String]
     } finally {
       TerminalFactory.reset()
       history.flush()
